@@ -2,6 +2,10 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
+<<<<<<< HEAD
+=======
+.utmp/
+>>>>>>> ab65098 (Initial commit)
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/

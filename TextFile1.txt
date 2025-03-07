@@ -1,0 +1,131 @@
+using UnityEngine;
+using UnityEngine.UI; // Import for UI Image handling
+
+public class Capture : MonoBehaviour
+{
+    [Header("Capture Settings")]
+    public Transform holdPosition; // Empty GameObject in front of player
+    public KeyCode interactKey = KeyCode.E; // Press 'E' to capture/place
+    public Animator playerAnimator; // Player Animator
+
+    [Header("UI Elements")]
+    public Image pocketImage; // UI Image to display the captured object
+    public Sprite defaultSprite; // Default sprite when no object is held
+    public Sprite heldObjectSprite; // Sprite to show when an object is captured
+
+    private GameObject capturedObject;
+    private Rigidbody capturedRb;
+    private Collider capturedCollider;
+    private bool isHolding = false;
+
+    void Start()
+    {
+        // Initialize UI with default sprite
+        if (pocketImage != null)
+        {
+            pocketImage.sprite = defaultSprite;
+        }
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(interactKey))
+        {
+            if (isHolding)
+            {
+                PlaceObject();
+            }
+            else
+            {
+                TryCaptureObject();
+            }
+        }
+    }
+
+    private void TryCaptureObject()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit, 2f)) // Detect object in front
+        {
+            if (hit.collider.CompareTag("Capturable")) // Make sure objects have the "Capturable" tag
+            {
+                capturedObject = hit.collider.gameObject;
+                capturedRb = capturedObject.GetComponent<Rigidbody>();
+                capturedCollider = capturedObject.GetComponent<Collider>();
+
+                if (capturedRb != null)
+                {
+                    capturedRb.isKinematic = true;  // Disable physics
+                    capturedRb.velocity = Vector3.zero;
+                    capturedRb.angularVelocity = Vector3.zero;
+                }
+
+                if (capturedCollider != null)
+                {
+                    capturedCollider.enabled = false; // Prevent collision with player
+                }
+
+                // Hide the object when captured
+                Renderer objectRenderer = capturedObject.GetComponent<Renderer>();
+                if (objectRenderer != null)
+                {
+                    objectRenderer.enabled = false; // Hide the object
+                }
+
+                // Attach object to player
+                capturedObject.transform.SetParent(holdPosition);
+                capturedObject.transform.localPosition = Vector3.zero;
+                capturedObject.transform.localRotation = Quaternion.identity;
+
+                // Update the UI to show the held object
+                if (pocketImage != null && heldObjectSprite != null)
+                {
+                    pocketImage.sprite = heldObjectSprite;
+                }
+
+                isHolding = true;
+                playerAnimator.SetTrigger("Capture");
+            }
+        }
+    }
+
+    private void PlaceObject()
+    {
+        if (capturedObject != null)
+        {
+            // Remove from player
+            capturedObject.transform.SetParent(null);
+
+            if (capturedRb != null)
+            {
+                capturedRb.isKinematic = false; // Re-enable physics
+            }
+
+            if (capturedCollider != null)
+            {
+                capturedCollider.enabled = true; // Re-enable collision
+            }
+
+            // Show the object when placed
+            Renderer objectRenderer = capturedObject.GetComponent<Renderer>();
+            if (objectRenderer != null)
+            {
+                objectRenderer.enabled = true; // Show the object
+            }
+
+            // Drop object slightly in front of the player
+            Vector3 placePosition = transform.position + transform.forward * 2.5f + transform.up * 0.5f;
+            capturedObject.transform.position = placePosition;
+
+            // Reset the UI to default
+            if (pocketImage != null && defaultSprite != null)
+            {
+                pocketImage.sprite = defaultSprite;
+            }
+
+            isHolding = false;
+            playerAnimator.SetTrigger("Place");
+            capturedObject = null;
+        }
+    }
+}
