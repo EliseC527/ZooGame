@@ -1,27 +1,12 @@
 using UnityEngine;
-using UnityEngine.UI; // Import for UI Image handling
 
 public class Capture : MonoBehaviour
 {
     public Transform holdPosition;
-    public KeyCode interactKey = KeyCode.E;
-    public Animator playerAnimator;
-    public Image pocketImage;
-    public Sprite defaultSprite;
-    public Sprite heldObjectSprite;
+    public KeyCode interactKey = KeyCode.F;
 
-    private GameObject capturedObject;
-    private Rigidbody capturedRb;
-    private Collider capturedCollider;
     private bool isHolding = false;
-
-    void Start()
-    {
-        if (pocketImage != null)
-        {
-            pocketImage.sprite = defaultSprite;
-        }
-    }
+    private GameObject capturedObject;
 
     void Update()
     {
@@ -29,12 +14,11 @@ public class Capture : MonoBehaviour
         {
             if (isHolding)
             {
-                PlaceObject();
+                Debug.Log("Already holding an object.");
+                return;
             }
-            else
-            {
-                TryCaptureObject();
-            }
+
+            TryCaptureObject();
         }
     }
 
@@ -45,81 +29,31 @@ public class Capture : MonoBehaviour
         {
             if (hit.collider.CompareTag("Capturable"))
             {
-                capturedObject = hit.collider.gameObject;
-                capturedRb = capturedObject.GetComponent<Rigidbody>();
-                capturedCollider = capturedObject.GetComponent<Collider>();
+                CapturableObject capturable = hit.collider.GetComponent<CapturableObject>();
 
-                if (capturedRb != null)
+                if (capturable != null && capturable.prefabReference != null)
                 {
-                    capturedRb.isKinematic = true;
-                    capturedRb.velocity = Vector3.zero;
-                    capturedRb.angularVelocity = Vector3.zero;
-                }
+                    PersistentHolder.Instance.capturedAnimalPrefab = capturable.prefabReference;
 
-                if (capturedCollider != null)
+                    if (capturable.gameObject != null)
+                        capturable.gameObject.SetActive(false);
+
+                    isHolding = true;
+                    Debug.Log("Captured: " + capturable.prefabReference.name);
+                }
+                else
                 {
-                    capturedCollider.enabled = false;
+                    Debug.LogWarning("Captured object missing prefab reference.");
                 }
-
-                Renderer objectRenderer = capturedObject.GetComponent<Renderer>();
-                if (objectRenderer != null)
-                {
-                    objectRenderer.enabled = false;
-                }
-
-                CapturableObject capturable = capturedObject.GetComponent<CapturableObject>();
-                if (pocketImage != null)
-                {
-                    if (capturable != null && capturable.objectSprite != null)
-                    {
-                        pocketImage.sprite = capturable.objectSprite;
-                    }
-                    else
-                    {
-                        pocketImage.sprite = heldObjectSprite;
-                    }
-                }
-
-                isHolding = true;
-                playerAnimator.SetTrigger("Capture");
+            }
+            else
+            {
+                Debug.Log("Hit object is not capturable.");
             }
         }
-    }
-
-    private void PlaceObject()
-    {
-        if (capturedObject != null)
+        else
         {
-            isHolding = false;
-            capturedObject.transform.SetParent(null);
-
-            if (capturedRb != null)
-            {
-                capturedRb.isKinematic = false;
-            }
-
-            if (capturedCollider != null)
-            {
-                capturedCollider.enabled = true;
-            }
-
-            Renderer objectRenderer = capturedObject.GetComponent<Renderer>();
-            if (objectRenderer != null)
-            {
-                objectRenderer.enabled = true;
-            }
-
-            Vector3 placePosition = transform.position + transform.forward * 2.5f + transform.up * 1.0f;
-            capturedObject.transform.position = placePosition;
-
-            if (pocketImage != null && defaultSprite != null)
-            {
-                pocketImage.sprite = defaultSprite;
-            }
-
-            playerAnimator.SetTrigger("Place");
-
-            capturedObject = null;
+            Debug.Log("Nothing to capture in front.");
         }
     }
 }

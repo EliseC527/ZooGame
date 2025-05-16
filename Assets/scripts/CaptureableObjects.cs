@@ -1,10 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 using UnityEngine;
 
 public class CapturableObject : MonoBehaviour
 {
-    public Sprite objectSprite; // Assign a different sprite for each capturable object
+    public Sprite objectSprite;           // The UI sprite representing this animal
+    public GameObject prefabReference;   // Reference to the actual prefab
 }
